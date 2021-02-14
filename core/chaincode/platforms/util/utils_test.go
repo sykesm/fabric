@@ -24,10 +24,12 @@ import (
 )
 
 func TestDockerPull(t *testing.T) {
+	if runtime.GOARCH != "amd64" {
+		t.Skip("Test only runs on amd64")
+	}
 	codepackage, output := io.Pipe()
 	go func() {
 		tw := tar.NewWriter(output)
-
 		tw.Close()
 		output.Close()
 	}()
