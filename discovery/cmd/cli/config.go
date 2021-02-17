@@ -4,13 +4,13 @@ Copyright IBM Corp. All Rights Reserved.
 SPDX-License-Identifier: Apache-2.0
 */
 
-package common
+package cli
 
 import (
 	"io/ioutil"
 
-	"github.com/hyperledger/fabric/cmd/common/comm"
-	"github.com/hyperledger/fabric/cmd/common/signer"
+	"github.com/hyperledger/fabric/discovery/cmd/cli/comm"
+	"github.com/hyperledger/fabric/discovery/cmd/cli/signer"
 	"github.com/pkg/errors"
 	yaml "gopkg.in/yaml.v2"
 )

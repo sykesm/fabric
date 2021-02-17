@@ -13,8 +13,8 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric-protos-go/msp"
-	"github.com/hyperledger/fabric/cmd/common"
 	discovery "github.com/hyperledger/fabric/discovery/client"
+	"github.com/hyperledger/fabric/discovery/cmd/cli"
 	"github.com/pkg/errors"
 )
 
@@ -45,7 +45,7 @@ func (pc *PeerCmd) SetChannel(channel *string) {
 }
 
 // Execute executes the command
-func (pc *PeerCmd) Execute(conf common.Config) error {
+func (pc *PeerCmd) Execute(conf cli.Config) error {
 	channel := ""
 
 	if pc.channel != nil {

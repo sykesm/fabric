@@ -17,8 +17,8 @@ import (
 	"github.com/hyperledger/fabric-protos-go/discovery"
 	"github.com/hyperledger/fabric-protos-go/gossip"
 	"github.com/hyperledger/fabric-protos-go/msp"
-	"github.com/hyperledger/fabric/cmd/common"
 	discoveryclient "github.com/hyperledger/fabric/discovery/client"
+	"github.com/hyperledger/fabric/discovery/cmd/cli"
 	"github.com/hyperledger/fabric/gossip/protoext"
 	"github.com/pkg/errors"
 )
@@ -68,7 +68,7 @@ func (pc *EndorsersCmd) SetChannel(channel *string) {
 }
 
 // Execute executes the command
-func (pc *EndorsersCmd) Execute(conf common.Config) error {
+func (pc *EndorsersCmd) Execute(conf cli.Config) error {
 	if pc.channel == nil || *pc.channel == "" {
 		return errors.New("no channel specified")
 	}

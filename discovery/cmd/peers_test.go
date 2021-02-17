@@ -14,9 +14,9 @@ import (
 
 	"github.com/hyperledger/fabric-protos-go/gossip"
 	"github.com/hyperledger/fabric-protos-go/msp"
-	"github.com/hyperledger/fabric/cmd/common"
-	. "github.com/hyperledger/fabric/discovery/client"
+	discoveryclient "github.com/hyperledger/fabric/discovery/client"
 	discovery "github.com/hyperledger/fabric/discovery/cmd"
+	"github.com/hyperledger/fabric/discovery/cmd/cli"
 	"github.com/hyperledger/fabric/discovery/cmd/mocks"
 	"github.com/hyperledger/fabric/gossip/protoext"
 	"github.com/hyperledger/fabric/protoutil"
@@ -33,14 +33,14 @@ func TestPeerCmd(t *testing.T) {
 
 	t.Run("no server supplied", func(t *testing.T) {
 		cmd.SetServer(nil)
-		err := cmd.Execute(common.Config{})
+		err := cmd.Execute(cli.Config{})
 		require.Equal(t, err.Error(), "no server specified")
 	})
 
 	t.Run("Server return error", func(t *testing.T) {
 		cmd.SetServer(&server)
 		stub.On("Send", server, mock.Anything, mock.Anything).Return(nil, errors.New("deadline exceeded")).Once()
-		err := cmd.Execute(common.Config{})
+		err := cmd.Execute(cli.Config{})
 		require.Contains(t, err.Error(), "deadline exceeded")
 	})
 
@@ -51,13 +51,13 @@ func TestPeerCmd(t *testing.T) {
 
 		var emptyChannel string
 		parser.On("ParseResponse", emptyChannel, mock.Anything).Return(nil)
-		err := cmd.Execute(common.Config{})
+		err := cmd.Execute(cli.Config{})
 		require.NoError(t, err)
 
 		channel := "mychannel"
 		cmd.SetChannel(&channel)
 		parser.On("ParseResponse", channel, mock.Anything).Return(nil)
-		err = cmd.Execute(common.Config{})
+		err = cmd.Execute(cli.Config{})
 		require.NoError(t, err)
 	})
 }
@@ -74,20 +74,20 @@ func TestParsePeers(t *testing.T) {
 
 	idBytes := protoutil.MarshalOrPanic(sID)
 
-	validPeer := &Peer{
+	validPeer := &discoveryclient.Peer{
 		MSPID:            "Org1MSP",
 		Identity:         idBytes,
 		AliveMessage:     aliveMessage(0),
 		StateInfoMessage: stateInfoMessage(100),
 	}
-	invalidPeer := &Peer{
+	invalidPeer := &discoveryclient.Peer{
 		MSPID: "Org2MSP",
 	}
 
 	chanRes := &mocks.ChannelResponse{}
-	chanRes.On("Peers").Return([]*Peer{validPeer, invalidPeer}, nil)
+	chanRes.On("Peers").Return([]*discoveryclient.Peer{validPeer, invalidPeer}, nil)
 	locRes := &mocks.LocalResponse{}
-	locRes.On("Peers").Return([]*Peer{validPeer, invalidPeer}, nil)
+	locRes.On("Peers").Return([]*discoveryclient.Peer{validPeer, invalidPeer}, nil)
 
 	res.On("ForChannel", "mychannel").Return(chanRes)
 	res.On("ForLocal").Return(locRes)

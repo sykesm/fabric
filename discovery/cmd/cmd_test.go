@@ -19,7 +19,7 @@ import (
 func TestAddCommands(t *testing.T) {
 	app := kingpin.New("foo", "bar")
 	cli := &mocks.CommandRegistrar{}
-	configFunc := mock.AnythingOfType("common.CLICommand")
+	configFunc := mock.AnythingOfType("cli.CLICommand")
 	cli.On("Command", discovery.PeersCommand, mock.Anything, configFunc).Return(app.Command(discovery.PeersCommand, ""))
 	cli.On("Command", discovery.ConfigCommand, mock.Anything, configFunc).Return(app.Command(discovery.ConfigCommand, ""))
 	cli.On("Command", discovery.EndorsersCommand, mock.Anything, configFunc).Return(app.Command(discovery.EndorsersCommand, ""))

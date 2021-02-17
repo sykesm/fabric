@@ -13,8 +13,8 @@ import (
 
 	. "github.com/hyperledger/fabric-protos-go/discovery"
 	"github.com/hyperledger/fabric-protos-go/msp"
-	"github.com/hyperledger/fabric/cmd/common"
 	discovery "github.com/hyperledger/fabric/discovery/cmd"
+	"github.com/hyperledger/fabric/discovery/cmd/cli"
 	"github.com/hyperledger/fabric/discovery/cmd/mocks"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/mock"
@@ -32,7 +32,7 @@ func TestConfigCmd(t *testing.T) {
 		cmd.SetChannel(&channel)
 		cmd.SetServer(nil)
 
-		err := cmd.Execute(common.Config{})
+		err := cmd.Execute(cli.Config{})
 		require.Equal(t, err.Error(), "no server specified")
 	})
 
@@ -40,7 +40,7 @@ func TestConfigCmd(t *testing.T) {
 		cmd.SetChannel(nil)
 		cmd.SetServer(&server)
 
-		err := cmd.Execute(common.Config{})
+		err := cmd.Execute(cli.Config{})
 		require.Equal(t, err.Error(), "no channel specified")
 	})
 
@@ -49,7 +49,7 @@ func TestConfigCmd(t *testing.T) {
 		cmd.SetServer(&server)
 
 		stub.On("Send", server, mock.Anything, mock.Anything).Return(nil, errors.New("deadline exceeded")).Once()
-		err := cmd.Execute(common.Config{})
+		err := cmd.Execute(cli.Config{})
 		require.Contains(t, err.Error(), "deadline exceeded")
 	})
 
@@ -60,7 +60,7 @@ func TestConfigCmd(t *testing.T) {
 		cmd.SetServer(&server)
 		parser.On("ParseResponse", channel, mock.Anything).Return(nil)
 
-		err := cmd.Execute(common.Config{})
+		err := cmd.Execute(cli.Config{})
 		require.NoError(t, err)
 	})
 }

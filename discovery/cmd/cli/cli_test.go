@@ -4,7 +4,7 @@ Copyright IBM Corp. All Rights Reserved.
 SPDX-License-Identifier: Apache-2.0
 */
 
-package common
+package cli
 
 import (
 	"bytes"
@@ -14,7 +14,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/hyperledger/fabric/cmd/common/signer"
+	"github.com/hyperledger/fabric/discovery/cmd/cli/signer"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 )

@@ -11,8 +11,8 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/hyperledger/fabric/cmd/common"
 	discovery "github.com/hyperledger/fabric/discovery/client"
+	"github.com/hyperledger/fabric/discovery/cmd/cli"
 	"github.com/pkg/errors"
 )
 
@@ -43,7 +43,7 @@ func (pc *ConfigCmd) SetChannel(channel *string) {
 }
 
 // Execute executes the command
-func (pc *ConfigCmd) Execute(conf common.Config) error {
+func (pc *ConfigCmd) Execute(conf cli.Config) error {
 	if pc.server == nil || *pc.server == "" {
 		return errors.New("no server specified")
 	}

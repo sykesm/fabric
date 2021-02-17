@@ -4,7 +4,7 @@ Copyright IBM Corp. All Rights Reserved.
 SPDX-License-Identifier: Apache-2.0
 */
 
-package common
+package cli
 
 import (
 	"fmt"
@@ -12,8 +12,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/hyperledger/fabric/cmd/common/comm"
-	"github.com/hyperledger/fabric/cmd/common/signer"
+	"github.com/hyperledger/fabric/discovery/cmd/cli/comm"
+	"github.com/hyperledger/fabric/discovery/cmd/cli/signer"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 

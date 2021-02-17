@@ -12,10 +12,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/hyperledger/fabric/cmd/common"
-	"github.com/hyperledger/fabric/cmd/common/comm"
-	"github.com/hyperledger/fabric/cmd/common/signer"
 	discovery "github.com/hyperledger/fabric/discovery/client"
+	"github.com/hyperledger/fabric/discovery/cmd/cli"
+	"github.com/hyperledger/fabric/discovery/cmd/cli/comm"
+	"github.com/hyperledger/fabric/discovery/cmd/cli/signer"
 	corecomm "github.com/hyperledger/fabric/internal/pkg/comm"
 	"github.com/stretchr/testify/require"
 )
@@ -34,7 +34,7 @@ func TestClientStub(t *testing.T) {
 
 	req := discovery.NewRequest()
 
-	_, err = stub.Send(endpoint, common.Config{
+	_, err = stub.Send(endpoint, cli.Config{
 		SignerConfig: signer.Config{
 			MSPID:        "Org1MSP",
 			KeyPath:      filepath.Join("testdata", "8150cb2d09628ccc89727611ebb736189f6482747eff9b8aaaa27e9a382d2e93_sk"),
@@ -59,7 +59,7 @@ func TestRawStub(t *testing.T) {
 
 	req := discovery.NewRequest()
 
-	_, err = stub.Send(endpoint, common.Config{
+	_, err = stub.Send(endpoint, cli.Config{
 		SignerConfig: signer.Config{
 			MSPID:        "Org1MSP",
 			KeyPath:      filepath.Join("testdata", "8150cb2d09628ccc89727611ebb736189f6482747eff9b8aaaa27e9a382d2e93_sk"),

@@ -10,8 +10,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/hyperledger/fabric/cmd/common"
 	discovery "github.com/hyperledger/fabric/discovery/client"
+	"github.com/hyperledger/fabric/discovery/cmd/cli"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
@@ -33,7 +33,7 @@ const (
 // Stub represents the remote discovery service
 type Stub interface {
 	// Send sends the request, and receives a response
-	Send(server string, conf common.Config, req *discovery.Request) (ServiceResponse, error)
+	Send(server string, conf cli.Config, req *discovery.Request) (ServiceResponse, error)
 }
 
 //go:generate mockery -dir . -name ResponseParser -case underscore -output mocks/
@@ -49,7 +49,7 @@ type ResponseParser interface {
 // CommandRegistrar registers commands
 type CommandRegistrar interface {
 	// Command adds a new top-level command to the CLI
-	Command(name, help string, onCommand common.CLICommand) *kingpin.CmdClause
+	Command(name, help string, onCommand cli.CLICommand) *kingpin.CmdClause
 }
 
 // AddCommands registers the discovery commands to the given CommandRegistrar

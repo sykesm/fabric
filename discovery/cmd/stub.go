@@ -10,10 +10,10 @@ import (
 	"context"
 
 	"github.com/hyperledger/fabric-protos-go/discovery"
-	"github.com/hyperledger/fabric/cmd/common"
-	"github.com/hyperledger/fabric/cmd/common/comm"
-	"github.com/hyperledger/fabric/cmd/common/signer"
 	discoveryclient "github.com/hyperledger/fabric/discovery/client"
+	"github.com/hyperledger/fabric/discovery/cmd/cli"
+	"github.com/hyperledger/fabric/discovery/cmd/cli/comm"
+	"github.com/hyperledger/fabric/discovery/cmd/cli/signer"
 	"github.com/hyperledger/fabric/protoutil"
 	"github.com/pkg/errors"
 )
@@ -60,7 +60,7 @@ func (r *response) Raw() *discovery.Response {
 type ClientStub struct{}
 
 // Send sends the request, and receives a response
-func (stub *ClientStub) Send(server string, conf common.Config, req *discoveryclient.Request) (ServiceResponse, error) {
+func (stub *ClientStub) Send(server string, conf cli.Config, req *discoveryclient.Request) (ServiceResponse, error) {
 	comm, err := comm.NewClient(conf.TLSConfig)
 	if err != nil {
 		return nil, err
@@ -91,7 +91,7 @@ func (stub *ClientStub) Send(server string, conf common.Config, req *discoverycl
 type RawStub struct{}
 
 // Send sends the request, and receives a response
-func (stub *RawStub) Send(server string, conf common.Config, req *discoveryclient.Request) (ServiceResponse, error) {
+func (stub *RawStub) Send(server string, conf cli.Config, req *discoveryclient.Request) (ServiceResponse, error) {
 	comm, err := comm.NewClient(conf.TLSConfig)
 	if err != nil {
 		return nil, err

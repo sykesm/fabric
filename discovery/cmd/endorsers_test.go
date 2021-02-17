@@ -12,9 +12,9 @@ import (
 
 	discprotos "github.com/hyperledger/fabric-protos-go/discovery"
 	"github.com/hyperledger/fabric-protos-go/msp"
-	"github.com/hyperledger/fabric/cmd/common"
 	. "github.com/hyperledger/fabric/discovery/client"
 	discovery "github.com/hyperledger/fabric/discovery/cmd"
+	"github.com/hyperledger/fabric/discovery/cmd/cli"
 	"github.com/hyperledger/fabric/discovery/cmd/mocks"
 	"github.com/hyperledger/fabric/protoutil"
 	"github.com/pkg/errors"
@@ -32,7 +32,7 @@ func TestEndorserCmd(t *testing.T) {
 		cmd := discovery.NewEndorsersCmd(stub, parser)
 		cmd.SetChannel(&channel)
 
-		err := cmd.Execute(common.Config{})
+		err := cmd.Execute(cli.Config{})
 		require.Equal(t, err.Error(), "no server specified")
 	})
 
@@ -40,7 +40,7 @@ func TestEndorserCmd(t *testing.T) {
 		cmd := discovery.NewEndorsersCmd(stub, parser)
 		cmd.SetServer(&server)
 
-		err := cmd.Execute(common.Config{})
+		err := cmd.Execute(cli.Config{})
 		require.Equal(t, err.Error(), "no channel specified")
 	})
 
@@ -49,7 +49,7 @@ func TestEndorserCmd(t *testing.T) {
 		cmd.SetServer(&server)
 		cmd.SetChannel(&channel)
 
-		err := cmd.Execute(common.Config{})
+		err := cmd.Execute(cli.Config{})
 		require.Contains(t, err.Error(), "invocation chain should not be empty")
 	})
 
@@ -61,7 +61,7 @@ func TestEndorserCmd(t *testing.T) {
 		cmd.SetChaincodes(&chaincodes)
 		stub.On("Send", server, mock.Anything, mock.Anything).Return(nil, errors.New("deadline exceeded")).Once()
 
-		err := cmd.Execute(common.Config{})
+		err := cmd.Execute(cli.Config{})
 		require.Contains(t, err.Error(), "deadline exceeded")
 	})
 
@@ -74,7 +74,7 @@ func TestEndorserCmd(t *testing.T) {
 		parser.On("ParseResponse", channel, mock.Anything).Return(nil).Once()
 		stub.On("Send", server, mock.Anything, mock.Anything).Return(nil, nil).Once()
 
-		err := cmd.Execute(common.Config{})
+		err := cmd.Execute(cli.Config{})
 		require.NoError(t, err)
 	})
 
@@ -100,7 +100,7 @@ func TestEndorserCmd(t *testing.T) {
 			require.Equal(t, []string{"col1", "col2"}, req.Queries[0].GetCcQuery().Interests[0].Chaincodes[0].CollectionNames)
 		})
 
-		err := cmd.Execute(common.Config{})
+		err := cmd.Execute(cli.Config{})
 		require.NoError(t, err)
 		stub.AssertNumberOfCalls(t, "Send", 1)
 	})
@@ -120,7 +120,7 @@ func TestEndorserCmd(t *testing.T) {
 		cmd.SetCollections(&collections)
 		stub.On("Send", server, mock.Anything, mock.Anything).Return(nil, nil).Once()
 
-		err := cmd.Execute(common.Config{})
+		err := cmd.Execute(cli.Config{})
 		require.Contains(t, err.Error(), "a collection specified chaincode ourcc but it wasn't specified with a chaincode flag")
 	})
 
@@ -139,7 +139,7 @@ func TestEndorserCmd(t *testing.T) {
 		cmd.SetCollections(&collections)
 		stub.On("Send", server, mock.Anything, mock.Anything).Return(nil, nil).Once()
 
-		err := cmd.Execute(common.Config{})
+		err := cmd.Execute(cli.Config{})
 		require.Contains(t, err.Error(), "a collection specified chaincode ourcc but it wasn't specified with a chaincode flag")
 	})
 
@@ -155,7 +155,7 @@ func TestEndorserCmd(t *testing.T) {
 		cmd.SetNoPrivateReads(&noPrivateReads)
 		stub.On("Send", server, mock.Anything, mock.Anything).Return(nil, nil).Once()
 
-		err := cmd.Execute(common.Config{})
+		err := cmd.Execute(cli.Config{})
 		require.Contains(t, err.Error(), "chaincode yourcc is specified as not containing private data reads but should be explicitly defined via a chaincode flag")
 	})
 }
