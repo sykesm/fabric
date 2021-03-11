@@ -10,6 +10,7 @@ import (
 
 	"github.com/hyperledger/fabric-protos-go/peer"
 	"github.com/hyperledger/fabric/common/flogging"
+	"github.com/hyperledger/fabric/internal/pkg/gateway/commit"
 	"google.golang.org/grpc"
 )
 
@@ -30,7 +31,7 @@ func (e *EndorserServerAdapter) ProcessProposal(ctx context.Context, req *peer.S
 }
 
 // CreateServer creates an embedded instance of the Gateway.
-func CreateServer(localEndorser peer.EndorserClient, discovery Discovery, selfEndpoint string, options Options) *Server {
+func CreateServer(localEndorser peer.EndorserClient, discovery Discovery, commitNotifier commit.LedgerNotifier, selfEndpoint string, options Options) *Server {
 	gwServer := &Server{
 		registry: &registry{
 			localEndorser:       &endorser{client: localEndorser, endpointConfig: &endpointConfig{address: selfEndpoint}},

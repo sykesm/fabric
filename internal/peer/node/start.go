@@ -818,6 +818,7 @@ func serve(args []string) error {
 				gateway.CreateServer(
 					&gateway.EndorserServerAdapter{Server: serverEndorser},
 					discoveryService,
+					gateway.NewPeerNotifierAdapter(peerInstance),
 					peerInstance.GossipService.SelfMembershipInfo().Endpoint,
 					coreConfig.GatewayOptions,
 				),

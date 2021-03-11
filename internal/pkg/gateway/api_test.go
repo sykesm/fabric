@@ -24,6 +24,7 @@ import (
 	"github.com/hyperledger/fabric/gossip/api"
 	"github.com/hyperledger/fabric/gossip/common"
 	gdiscovery "github.com/hyperledger/fabric/gossip/discovery"
+	commitmock "github.com/hyperledger/fabric/internal/pkg/gateway/commit/mock"
 	"github.com/hyperledger/fabric/internal/pkg/gateway/mocks"
 	idmocks "github.com/hyperledger/fabric/internal/pkg/identity/mocks"
 	"github.com/hyperledger/fabric/protoutil"
@@ -127,7 +128,7 @@ func TestGateway(t *testing.T) {
 			EndorsementTimeout: endorsementTimeout,
 		}
 
-		server := CreateServer(localEndorser, disc, "localhost:7051", options)
+		server := CreateServer(localEndorser, disc, &commitmock.LedgerNotifier{}, "localhost:7051", options)
 
 		server.registry.endpointFactory = createEndpointFactory(t, "mock_response", "mock_orderer_response")
 
@@ -489,7 +490,7 @@ func TestGateway(t *testing.T) {
 }
 
 func TestNilArgs(t *testing.T) {
-	server := CreateServer(&mocks.EndorserClient{}, &mocks.Discovery{}, "localhost:7051", GetOptions(viper.New()))
+	server := CreateServer(&mocks.EndorserClient{}, &mocks.Discovery{}, &commitmock.LedgerNotifier{}, "localhost:7051", GetOptions(viper.New()))
 	ctx := context.Background()
 
 	_, err := server.Evaluate(ctx, nil)
