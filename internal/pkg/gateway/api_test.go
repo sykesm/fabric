@@ -25,6 +25,7 @@ import (
 	"github.com/hyperledger/fabric/gossip/common"
 	gdiscovery "github.com/hyperledger/fabric/gossip/discovery"
 	commitmock "github.com/hyperledger/fabric/internal/pkg/gateway/commit/mock"
+	"github.com/hyperledger/fabric/internal/pkg/gateway/config"
 	"github.com/hyperledger/fabric/internal/pkg/gateway/mocks"
 	idmocks "github.com/hyperledger/fabric/internal/pkg/identity/mocks"
 	"github.com/hyperledger/fabric/protoutil"
@@ -97,7 +98,7 @@ func TestGateway(t *testing.T) {
 
 		ca, err := tlsgen.NewCA()
 		require.NoError(t, err)
-		config := &dp.ConfigResult{
+		configResult := &dp.ConfigResult{
 			Orderers: map[string]*dp.Endpoints{
 				"msp1": {
 					Endpoint: []*dp.Endpoint{
@@ -118,12 +119,12 @@ func TestGateway(t *testing.T) {
 			{"id3", "peer2:9051", "msp1"},
 		}
 
-		disc := mockDiscovery(t, tt.plan, members, config)
+		disc := mockDiscovery(t, tt.plan, members, configResult)
 		if tt.setupDiscovery != nil {
 			tt.setupDiscovery(disc)
 		}
 
-		options := Options{
+		options := config.Options{
 			Enabled:            true,
 			EndorsementTimeout: endorsementTimeout,
 		}
@@ -490,7 +491,7 @@ func TestGateway(t *testing.T) {
 }
 
 func TestNilArgs(t *testing.T) {
-	server := CreateServer(&mocks.EndorserClient{}, &mocks.Discovery{}, &commitmock.LedgerNotifier{}, "localhost:7051", GetOptions(viper.New()))
+	server := CreateServer(&mocks.EndorserClient{}, &mocks.Discovery{}, &commitmock.LedgerNotifier{}, "localhost:7051", config.GetOptions(viper.New()))
 	ctx := context.Background()
 
 	_, err := server.Evaluate(ctx, nil)
