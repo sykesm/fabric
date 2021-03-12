@@ -14,22 +14,27 @@ import (
 	"github.com/hyperledger/fabric/core/ledger"
 )
 
+// LedgerNotifier obtains a commit notification channel for a specific ledger. It provides an abstraction of the use of
+// Peer, Channel and Ledger to obtain this result, and allows mocking in unit tests.
 type LedgerNotifier interface {
 	CommitNotifications(done <-chan struct{}, channelName string) (<-chan *ledger.CommitNotification, error)
 }
 
+// Notifier provides notification of transaction commits.
 type Notifier struct {
 	lock             sync.Mutex
 	ledgerNotifier   LedgerNotifier
 	channelNotifiers map[string]*channelNotifier
 }
 
+// Notification of a specific transaction commit.
 type Notification struct {
 	BlockNumber    uint64
 	TransactionID  string
 	ValidationCode peer.TxValidationCode
 }
 
+// NewNotifier constructor.
 func NewNotifier(ledgerNotifier LedgerNotifier) *Notifier {
 	if ledgerNotifier == nil {
 		panic("nil ledger notifier")
@@ -41,6 +46,8 @@ func NewNotifier(ledgerNotifier LedgerNotifier) *Notifier {
 	}
 }
 
+// Notify the caller when the named transaction commits on the named channel. The caller is only notified of commits
+// occuring after registering for notifications.
 func (notifier *Notifier) Notify(done <-chan struct{}, channelName string, transactionID string) (<-chan Notification, error) {
 	channelNotifier, err := notifier.channelNotifier(channelName)
 	if err != nil {
