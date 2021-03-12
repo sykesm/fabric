@@ -18,15 +18,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-//go:generate counterfeiter -o mock/ledgernotifier.go --fake-name LedgerNotifier . LedgerNotifier
+//go:generate counterfeiter -o mock/notificationsupplier.go --fake-name NotificationSupplier . NotificationSupplier
 
 func TestNotifier(t *testing.T) {
 	newTestNotifier := func(commitSend <-chan *ledger.CommitNotification) *commit.Notifier {
-		ledgerNotifier := &mock.LedgerNotifier{}
-		ledgerNotifier.CommitNotificationsReturnsOnCall(0, commitSend, nil)
-		ledgerNotifier.CommitNotificationsReturns(nil, errors.New("unexpected call of CommitNotificationChannel"))
+		notificationSupplier := &mock.NotificationSupplier{}
+		notificationSupplier.CommitNotificationsReturnsOnCall(0, commitSend, nil)
+		notificationSupplier.CommitNotificationsReturns(nil, errors.New("unexpected call of CommitNotificationChannel"))
 
-		return commit.NewNotifier(ledgerNotifier)
+		return commit.NewNotifier(notificationSupplier)
 	}
 
 	t.Run("NewNotifier with nil ledger panics", func(t *testing.T) {
@@ -38,9 +38,9 @@ func TestNotifier(t *testing.T) {
 
 	t.Run("Notify", func(t *testing.T) {
 		t.Run("returns error if channel does not exist", func(t *testing.T) {
-			ledgerNotifier := &mock.LedgerNotifier{}
-			ledgerNotifier.CommitNotificationsReturns(nil, errors.New("ERROR"))
-			notifier := commit.NewNotifier(ledgerNotifier)
+			notificationSupplier := &mock.NotificationSupplier{}
+			notificationSupplier.CommitNotificationsReturns(nil, errors.New("ERROR"))
+			notifier := commit.NewNotifier(notificationSupplier)
 
 			_, err := notifier.Notify(context.Background().Done(), "CHANNEL_NAME", "TX_ID")
 
@@ -177,7 +177,7 @@ func TestNotifier(t *testing.T) {
 		})
 
 		t.Run("stops notification when done channel closed", func(t *testing.T) {
-			commitSend := make(chan *ledger.CommitNotification, 2)
+			commitSend := make(chan *ledger.CommitNotification, 1)
 			notifier := newTestNotifier(commitSend)
 
 			ctx, cancel := context.WithCancel(context.Background())
@@ -195,7 +195,7 @@ func TestNotifier(t *testing.T) {
 		})
 
 		t.Run("multiple listeners receive notifications", func(t *testing.T) {
-			commitSend := make(chan *ledger.CommitNotification, 2)
+			commitSend := make(chan *ledger.CommitNotification, 1)
 			notifier := newTestNotifier(commitSend)
 
 			commitReceive1, _ := notifier.Notify(context.Background().Done(), "CHANNEL_NAME", "TX_ID")
@@ -219,7 +219,7 @@ func TestNotifier(t *testing.T) {
 		})
 
 		t.Run("multiple listeners can stop listening independently", func(t *testing.T) {
-			commitSend := make(chan *ledger.CommitNotification, 2)
+			commitSend := make(chan *ledger.CommitNotification, 1)
 			notifier := newTestNotifier(commitSend)
 
 			ctx, cancel := context.WithCancel(context.Background())

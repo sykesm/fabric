@@ -8,7 +8,7 @@ import (
 	"github.com/hyperledger/fabric/internal/pkg/gateway/commit"
 )
 
-type LedgerNotifier struct {
+type NotificationSupplier struct {
 	CommitNotificationsStub        func(<-chan struct{}, string) (<-chan *ledger.CommitNotification, error)
 	commitNotificationsMutex       sync.RWMutex
 	commitNotificationsArgsForCall []struct {
@@ -27,7 +27,7 @@ type LedgerNotifier struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *LedgerNotifier) CommitNotifications(arg1 <-chan struct{}, arg2 string) (<-chan *ledger.CommitNotification, error) {
+func (fake *NotificationSupplier) CommitNotifications(arg1 <-chan struct{}, arg2 string) (<-chan *ledger.CommitNotification, error) {
 	fake.commitNotificationsMutex.Lock()
 	ret, specificReturn := fake.commitNotificationsReturnsOnCall[len(fake.commitNotificationsArgsForCall)]
 	fake.commitNotificationsArgsForCall = append(fake.commitNotificationsArgsForCall, struct {
@@ -47,26 +47,26 @@ func (fake *LedgerNotifier) CommitNotifications(arg1 <-chan struct{}, arg2 strin
 	return fakeReturns.result1, fakeReturns.result2
 }
 
-func (fake *LedgerNotifier) CommitNotificationsCallCount() int {
+func (fake *NotificationSupplier) CommitNotificationsCallCount() int {
 	fake.commitNotificationsMutex.RLock()
 	defer fake.commitNotificationsMutex.RUnlock()
 	return len(fake.commitNotificationsArgsForCall)
 }
 
-func (fake *LedgerNotifier) CommitNotificationsCalls(stub func(<-chan struct{}, string) (<-chan *ledger.CommitNotification, error)) {
+func (fake *NotificationSupplier) CommitNotificationsCalls(stub func(<-chan struct{}, string) (<-chan *ledger.CommitNotification, error)) {
 	fake.commitNotificationsMutex.Lock()
 	defer fake.commitNotificationsMutex.Unlock()
 	fake.CommitNotificationsStub = stub
 }
 
-func (fake *LedgerNotifier) CommitNotificationsArgsForCall(i int) (<-chan struct{}, string) {
+func (fake *NotificationSupplier) CommitNotificationsArgsForCall(i int) (<-chan struct{}, string) {
 	fake.commitNotificationsMutex.RLock()
 	defer fake.commitNotificationsMutex.RUnlock()
 	argsForCall := fake.commitNotificationsArgsForCall[i]
 	return argsForCall.arg1, argsForCall.arg2
 }
 
-func (fake *LedgerNotifier) CommitNotificationsReturns(result1 <-chan *ledger.CommitNotification, result2 error) {
+func (fake *NotificationSupplier) CommitNotificationsReturns(result1 <-chan *ledger.CommitNotification, result2 error) {
 	fake.commitNotificationsMutex.Lock()
 	defer fake.commitNotificationsMutex.Unlock()
 	fake.CommitNotificationsStub = nil
@@ -76,7 +76,7 @@ func (fake *LedgerNotifier) CommitNotificationsReturns(result1 <-chan *ledger.Co
 	}{result1, result2}
 }
 
-func (fake *LedgerNotifier) CommitNotificationsReturnsOnCall(i int, result1 <-chan *ledger.CommitNotification, result2 error) {
+func (fake *NotificationSupplier) CommitNotificationsReturnsOnCall(i int, result1 <-chan *ledger.CommitNotification, result2 error) {
 	fake.commitNotificationsMutex.Lock()
 	defer fake.commitNotificationsMutex.Unlock()
 	fake.CommitNotificationsStub = nil
@@ -92,7 +92,7 @@ func (fake *LedgerNotifier) CommitNotificationsReturnsOnCall(i int, result1 <-ch
 	}{result1, result2}
 }
 
-func (fake *LedgerNotifier) Invocations() map[string][][]interface{} {
+func (fake *NotificationSupplier) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
 	fake.commitNotificationsMutex.RLock()
@@ -104,7 +104,7 @@ func (fake *LedgerNotifier) Invocations() map[string][][]interface{} {
 	return copiedInvocations
 }
 
-func (fake *LedgerNotifier) recordInvocation(key string, args []interface{}) {
+func (fake *NotificationSupplier) recordInvocation(key string, args []interface{}) {
 	fake.invocationsMutex.Lock()
 	defer fake.invocationsMutex.Unlock()
 	if fake.invocations == nil {
@@ -116,4 +116,4 @@ func (fake *LedgerNotifier) recordInvocation(key string, args []interface{}) {
 	fake.invocations[key] = append(fake.invocations[key], args)
 }
 
-var _ commit.LedgerNotifier = new(LedgerNotifier)
+var _ commit.NotificationSupplier = new(NotificationSupplier)

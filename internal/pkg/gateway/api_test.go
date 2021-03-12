@@ -129,7 +129,7 @@ func TestGateway(t *testing.T) {
 			EndorsementTimeout: endorsementTimeout,
 		}
 
-		server := CreateServer(localEndorser, disc, &commitmock.LedgerNotifier{}, "localhost:7051", options)
+		server := CreateServer(localEndorser, disc, &commitmock.NotificationSupplier{}, "localhost:7051", options)
 
 		server.registry.endpointFactory = createEndpointFactory(t, "mock_response", "mock_orderer_response")
 
@@ -491,7 +491,7 @@ func TestGateway(t *testing.T) {
 }
 
 func TestNilArgs(t *testing.T) {
-	server := CreateServer(&mocks.EndorserClient{}, &mocks.Discovery{}, &commitmock.LedgerNotifier{}, "localhost:7051", config.GetOptions(viper.New()))
+	server := CreateServer(&mocks.EndorserClient{}, &mocks.Discovery{}, &commitmock.NotificationSupplier{}, "localhost:7051", config.GetOptions(viper.New()))
 	ctx := context.Background()
 
 	_, err := server.Evaluate(ctx, nil)

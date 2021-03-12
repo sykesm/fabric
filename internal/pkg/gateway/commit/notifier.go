@@ -14,17 +14,17 @@ import (
 	"github.com/hyperledger/fabric/core/ledger"
 )
 
-// LedgerNotifier obtains a commit notification channel for a specific ledger. It provides an abstraction of the use of
+// NotificationSupplier obtains a commit notification channel for a specific ledger. It provides an abstraction of the use of
 // Peer, Channel and Ledger to obtain this result, and allows mocking in unit tests.
-type LedgerNotifier interface {
+type NotificationSupplier interface {
 	CommitNotifications(done <-chan struct{}, channelName string) (<-chan *ledger.CommitNotification, error)
 }
 
 // Notifier provides notification of transaction commits.
 type Notifier struct {
 	lock             sync.Mutex
-	ledgerNotifier   LedgerNotifier
-	channelNotifiers map[string]*channelNotifier
+	supplier         NotificationSupplier
+	channelNotifiers map[string]*channelLevelNotifier
 }
 
 // Notification of a specific transaction commit.
@@ -35,14 +35,14 @@ type Notification struct {
 }
 
 // NewNotifier constructor.
-func NewNotifier(ledgerNotifier LedgerNotifier) *Notifier {
-	if ledgerNotifier == nil {
+func NewNotifier(supplier NotificationSupplier) *Notifier {
+	if supplier == nil {
 		panic("nil ledger notifier")
 	}
 
 	return &Notifier{
-		ledgerNotifier:   ledgerNotifier,
-		channelNotifiers: make(map[string]*channelNotifier),
+		supplier:         supplier,
+		channelNotifiers: make(map[string]*channelLevelNotifier),
 	}
 }
 
@@ -54,11 +54,11 @@ func (notifier *Notifier) Notify(done <-chan struct{}, channelName string, trans
 		return nil, err
 	}
 
-	notifyChannel := channelNotifier.RegisterListener(done, transactionID)
+	notifyChannel := channelNotifier.registerListener(done, transactionID)
 	return notifyChannel, nil
 }
 
-func (notifier *Notifier) channelNotifier(channelName string) (*channelNotifier, error) {
+func (notifier *Notifier) channelNotifier(channelName string) (*channelLevelNotifier, error) {
 	notifier.lock.Lock()
 	defer notifier.lock.Unlock()
 
@@ -67,7 +67,7 @@ func (notifier *Notifier) channelNotifier(channelName string) (*channelNotifier,
 		return result, nil
 	}
 
-	commitChannel, err := notifier.ledgerNotifier.CommitNotifications(context.Background().Done(), channelName)
+	commitChannel, err := notifier.supplier.CommitNotifications(context.Background().Done(), channelName)
 	if err != nil {
 		return nil, err
 	}
