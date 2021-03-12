@@ -193,5 +193,50 @@ func TestNotifier(t *testing.T) {
 
 			require.False(t, ok, "Expected notification channel to be closed but receive was successful")
 		})
+
+		t.Run("multiple listeners receive notifications", func(t *testing.T) {
+			commitSend := make(chan *ledger.CommitNotification, 2)
+			notifier := newTestNotifier(commitSend)
+
+			commitReceive1, _ := notifier.Notify(context.Background().Done(), "CHANNEL_NAME", "TX_ID")
+			commitReceive2, _ := notifier.Notify(context.Background().Done(), "CHANNEL_NAME", "TX_ID")
+			commitSend <- &ledger.CommitNotification{
+				BlockNumber: 1,
+				TxIDValidationCodes: map[string]peer.TxValidationCode{
+					"TX_ID": peer.TxValidationCode_MVCC_READ_CONFLICT,
+				},
+			}
+			actual1 := <-commitReceive1
+			actual2 := <-commitReceive2
+
+			expected := commit.Notification{
+				BlockNumber:    1,
+				TransactionID:  "TX_ID",
+				ValidationCode: peer.TxValidationCode_MVCC_READ_CONFLICT,
+			}
+			require.EqualValues(t, expected, actual1)
+			require.EqualValues(t, expected, actual2)
+		})
+
+		t.Run("multiple listeners can stop listening independently", func(t *testing.T) {
+			commitSend := make(chan *ledger.CommitNotification, 2)
+			notifier := newTestNotifier(commitSend)
+
+			ctx, cancel := context.WithCancel(context.Background())
+			commitReceive1, _ := notifier.Notify(ctx.Done(), "CHANNEL_NAME", "TX_ID")
+			commitReceive2, _ := notifier.Notify(context.Background().Done(), "CHANNEL_NAME", "TX_ID")
+			cancel()
+			commitSend <- &ledger.CommitNotification{
+				BlockNumber: 1,
+				TxIDValidationCodes: map[string]peer.TxValidationCode{
+					"TX_ID": peer.TxValidationCode_MVCC_READ_CONFLICT,
+				},
+			}
+			_, ok1 := <-commitReceive1
+			_, ok2 := <-commitReceive2
+
+			require.False(t, ok1, "Expected notification channel to be closed but receive was successful")
+			require.True(t, ok2, "Expected notification channel to deliver a result but was closed")
+		})
 	})
 }
