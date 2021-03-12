@@ -37,19 +37,21 @@ func TestNotifier(t *testing.T) {
 	})
 
 	t.Run("Notify", func(t *testing.T) {
-		t.Run("returns error if channel does not exist", func(t *testing.T) {
+		t.Run("returns error from notification supplier", func(t *testing.T) {
 			notificationSupplier := &mock.NotificationSupplier{}
-			notificationSupplier.CommitNotificationsReturns(nil, errors.New("ERROR"))
+			notificationSupplier.CommitNotificationsReturns(nil, errors.New("MY_ERROR"))
 			notifier := commit.NewNotifier(notificationSupplier)
+			defer notifier.Close()
 
 			_, err := notifier.Notify(context.Background().Done(), "CHANNEL_NAME", "TX_ID")
 
-			require.Error(t, err)
+			require.ErrorContains(t, err, "MY_ERROR")
 		})
 
 		t.Run("returns notifier on successful registration", func(t *testing.T) {
 			commitSend := make(chan *ledger.CommitNotification)
 			notifier := newTestNotifier(commitSend)
+			defer notifier.Close()
 
 			commitReceive, err := notifier.Notify(context.Background().Done(), "CHANNEL_NAME", "TX_ID")
 			require.NoError(t, err)
@@ -59,6 +61,7 @@ func TestNotifier(t *testing.T) {
 		t.Run("delivers notification for matching transaction", func(t *testing.T) {
 			commitSend := make(chan *ledger.CommitNotification, 1)
 			notifier := newTestNotifier(commitSend)
+			defer notifier.Close()
 
 			commitReceive, _ := notifier.Notify(context.Background().Done(), "CHANNEL_NAME", "TX_ID")
 			commitSend <- &ledger.CommitNotification{
@@ -80,6 +83,7 @@ func TestNotifier(t *testing.T) {
 		t.Run("ignores non-matching transaction in same block", func(t *testing.T) {
 			commitSend := make(chan *ledger.CommitNotification, 1)
 			notifier := newTestNotifier(commitSend)
+			defer notifier.Close()
 
 			commitReceive, _ := notifier.Notify(context.Background().Done(), "CHANNEL_NAME", "TX_ID")
 			commitSend <- &ledger.CommitNotification{
@@ -102,6 +106,7 @@ func TestNotifier(t *testing.T) {
 		t.Run("ignores blocks without matching transaction", func(t *testing.T) {
 			commitSend := make(chan *ledger.CommitNotification, 2)
 			notifier := newTestNotifier(commitSend)
+			defer notifier.Close()
 
 			commitReceive, _ := notifier.Notify(context.Background().Done(), "CHANNEL_NAME", "TX_ID")
 			commitSend <- &ledger.CommitNotification{
@@ -129,6 +134,7 @@ func TestNotifier(t *testing.T) {
 		t.Run("processes blocks in order", func(t *testing.T) {
 			commitSend := make(chan *ledger.CommitNotification, 2)
 			notifier := newTestNotifier(commitSend)
+			defer notifier.Close()
 
 			commitReceive, _ := notifier.Notify(context.Background().Done(), "CHANNEL_NAME", "TX_ID")
 			commitSend <- &ledger.CommitNotification{
@@ -156,6 +162,7 @@ func TestNotifier(t *testing.T) {
 		t.Run("closes channel after notification", func(t *testing.T) {
 			commitSend := make(chan *ledger.CommitNotification, 2)
 			notifier := newTestNotifier(commitSend)
+			defer notifier.Close()
 
 			commitReceive, _ := notifier.Notify(context.Background().Done(), "CHANNEL_NAME", "TX_ID")
 			commitSend <- &ledger.CommitNotification{
@@ -179,6 +186,7 @@ func TestNotifier(t *testing.T) {
 		t.Run("stops notification when done channel closed", func(t *testing.T) {
 			commitSend := make(chan *ledger.CommitNotification, 1)
 			notifier := newTestNotifier(commitSend)
+			defer notifier.Close()
 
 			ctx, cancel := context.WithCancel(context.Background())
 			commitReceive, _ := notifier.Notify(ctx.Done(), "CHANNEL_NAME", "TX_ID")
@@ -197,6 +205,7 @@ func TestNotifier(t *testing.T) {
 		t.Run("multiple listeners receive notifications", func(t *testing.T) {
 			commitSend := make(chan *ledger.CommitNotification, 1)
 			notifier := newTestNotifier(commitSend)
+			defer notifier.Close()
 
 			commitReceive1, _ := notifier.Notify(context.Background().Done(), "CHANNEL_NAME", "TX_ID")
 			commitReceive2, _ := notifier.Notify(context.Background().Done(), "CHANNEL_NAME", "TX_ID")
@@ -221,6 +230,7 @@ func TestNotifier(t *testing.T) {
 		t.Run("multiple listeners can stop listening independently", func(t *testing.T) {
 			commitSend := make(chan *ledger.CommitNotification, 1)
 			notifier := newTestNotifier(commitSend)
+			defer notifier.Close()
 
 			ctx, cancel := context.WithCancel(context.Background())
 			commitReceive1, _ := notifier.Notify(ctx.Done(), "CHANNEL_NAME", "TX_ID")
@@ -237,6 +247,20 @@ func TestNotifier(t *testing.T) {
 
 			require.False(t, ok1, "Expected notification channel to be closed but receive was successful")
 			require.True(t, ok2, "Expected notification channel to deliver a result but was closed")
+		})
+	})
+
+	t.Run("Close", func(t *testing.T) {
+		t.Run("stops all listeners", func(t *testing.T) {
+			commitSend := make(chan *ledger.CommitNotification)
+			notifier := newTestNotifier(commitSend)
+
+			commitReceive, _ := notifier.Notify(context.Background().Done(), "CHANNEL_NAME", "TX_ID")
+			notifier.Close()
+
+			_, ok := <-commitReceive
+
+			require.False(t, ok, "Expected notification channel to be closed but receive was successful")
 		})
 	})
 }

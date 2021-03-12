@@ -13,15 +13,17 @@ import (
 )
 
 type channelLevelNotifier struct {
-	lock          sync.Mutex
 	commitChannel <-chan *ledger.CommitNotification
-	listeners     map[string][]*channelLevelListener
+	lock          sync.Mutex
+	listeners     map[string][]*transactionListener
+	done          <-chan struct{}
 }
 
-func newChannelNotifier(commitChannel <-chan *ledger.CommitNotification) *channelLevelNotifier {
+func newChannelNotifier(done <-chan struct{}, commitChannel <-chan *ledger.CommitNotification) *channelLevelNotifier {
 	notifier := &channelLevelNotifier{
 		commitChannel: commitChannel,
-		listeners:     make(map[string][]*channelLevelListener),
+		listeners:     make(map[string][]*transactionListener),
+		done:          done,
 	}
 	go notifier.run()
 	return notifier
@@ -29,21 +31,28 @@ func newChannelNotifier(commitChannel <-chan *ledger.CommitNotification) *channe
 
 func (notifier *channelLevelNotifier) run() {
 	for {
-		blockCommit, ok := <-notifier.commitChannel
-		if !ok {
-			break
-		}
-
-		notifier.removeCompletedListeners()
-
-		for transactionID, status := range blockCommit.TxIDValidationCodes {
-			notification := &Notification{
-				BlockNumber:    blockCommit.BlockNumber,
-				TransactionID:  transactionID,
-				ValidationCode: status,
+		select {
+		case blockCommit, ok := <-notifier.commitChannel:
+			if !ok {
+				panic("commit channel closed unexpectedly")
 			}
-			notifier.notify(notification)
+			notifier.removeCompletedListeners()
+			notifier.receiveBlock(blockCommit)
+		case <-notifier.done:
+			notifier.close()
+			return
 		}
+	}
+}
+
+func (notifier *channelLevelNotifier) receiveBlock(blockCommit *ledger.CommitNotification) {
+	for transactionID, status := range blockCommit.TxIDValidationCodes {
+		notification := &Notification{
+			BlockNumber:    blockCommit.BlockNumber,
+			TransactionID:  transactionID,
+			ValidationCode: status,
+		}
+		notifier.notify(notification)
 	}
 }
 
@@ -87,7 +96,7 @@ func (notifier *channelLevelNotifier) notify(notification *Notification) {
 
 func (notifier *channelLevelNotifier) registerListener(done <-chan struct{}, transactionID string) <-chan Notification {
 	notifyChannel := make(chan Notification, 1) // avoid blocking and only expect one notification per channel
-	listener := &channelLevelListener{
+	listener := &transactionListener{
 		done:          done,
 		transactionID: transactionID,
 		notifyChannel: notifyChannel,
@@ -100,13 +109,26 @@ func (notifier *channelLevelNotifier) registerListener(done <-chan struct{}, tra
 	return notifyChannel
 }
 
-type channelLevelListener struct {
+func (notifier *channelLevelNotifier) close() {
+	notifier.lock.Lock()
+	defer notifier.lock.Unlock()
+
+	for _, listeners := range notifier.listeners {
+		for _, listener := range listeners {
+			listener.close()
+		}
+	}
+
+	notifier.listeners = nil
+}
+
+type transactionListener struct {
 	done          <-chan struct{}
 	transactionID string
 	notifyChannel chan<- Notification
 }
 
-func (listener *channelLevelListener) isDone() bool {
+func (listener *transactionListener) isDone() bool {
 	select {
 	case <-listener.done:
 		return true
@@ -115,10 +137,10 @@ func (listener *channelLevelListener) isDone() bool {
 	}
 }
 
-func (listener *channelLevelListener) close() {
+func (listener *transactionListener) close() {
 	close(listener.notifyChannel)
 }
 
-func (listener *channelLevelListener) receive(notification *Notification) {
+func (listener *transactionListener) receive(notification *Notification) {
 	listener.notifyChannel <- *notification
 }

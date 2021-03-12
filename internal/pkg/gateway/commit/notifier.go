@@ -22,9 +22,10 @@ type NotificationSupplier interface {
 
 // Notifier provides notification of transaction commits.
 type Notifier struct {
-	lock             sync.Mutex
 	supplier         NotificationSupplier
+	lock             sync.Mutex
 	channelNotifiers map[string]*channelLevelNotifier
+	cancel           chan struct{}
 }
 
 // Notification of a specific transaction commit.
@@ -43,6 +44,7 @@ func NewNotifier(supplier NotificationSupplier) *Notifier {
 	return &Notifier{
 		supplier:         supplier,
 		channelNotifiers: make(map[string]*channelLevelNotifier),
+		cancel:           make(chan struct{}),
 	}
 }
 
@@ -56,6 +58,12 @@ func (notifier *Notifier) Notify(done <-chan struct{}, channelName string, trans
 
 	notifyChannel := channelNotifier.registerListener(done, transactionID)
 	return notifyChannel, nil
+}
+
+// Close the notifier. This closes all notification channels obtained from this notifier. Behaviour is undefined after
+// closing and the notifier should not be used.
+func (notifier *Notifier) Close() {
+	close(notifier.cancel)
 }
 
 func (notifier *Notifier) channelNotifier(channelName string) (*channelLevelNotifier, error) {
@@ -72,7 +80,7 @@ func (notifier *Notifier) channelNotifier(channelName string) (*channelLevelNoti
 		return nil, err
 	}
 
-	result = newChannelNotifier(commitChannel)
+	result = newChannelNotifier(notifier.cancel, commitChannel)
 	notifier.channelNotifiers[channelName] = result
 
 	return result, nil
