@@ -26,6 +26,7 @@ type Notifier struct {
 	lock             sync.Mutex
 	channelNotifiers map[string]*channelLevelNotifier
 	cancel           chan struct{}
+	once             sync.Once
 }
 
 // Notification of a specific transaction commit.
@@ -63,7 +64,9 @@ func (notifier *Notifier) Notify(done <-chan struct{}, channelName string, trans
 // Close the notifier. This closes all notification channels obtained from this notifier. Behaviour is undefined after
 // closing and the notifier should not be used.
 func (notifier *Notifier) Close() {
-	close(notifier.cancel)
+	notifier.once.Do(func() {
+		close(notifier.cancel)
+	})
 }
 
 func (notifier *Notifier) channelNotifier(channelName string) (*channelLevelNotifier, error) {

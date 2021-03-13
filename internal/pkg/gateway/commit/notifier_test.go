@@ -262,5 +262,15 @@ func TestNotifier(t *testing.T) {
 
 			require.False(t, ok, "Expected notification channel to be closed but receive was successful")
 		})
+
+		t.Run("idempotent", func(t *testing.T) {
+			commitSend := make(chan *ledger.CommitNotification)
+			notifier := newTestNotifier(commitSend)
+			notifier.Close()
+
+			require.NotPanics(t, func() {
+				notifier.Close()
+			})
+		})
 	})
 }
