@@ -820,6 +820,7 @@ func serve(args []string) error {
 					discoveryService,
 					gateway.NewPeerNotifierAdapter(peerInstance),
 					peerInstance.GossipService.SelfMembershipInfo().Endpoint,
+					coreConfig.LocalMSPID,
 					coreConfig.GatewayOptions,
 				),
 			)
