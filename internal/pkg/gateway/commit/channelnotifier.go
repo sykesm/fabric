@@ -34,7 +34,9 @@ func (notifier *channelLevelNotifier) run() {
 		select {
 		case blockCommit, ok := <-notifier.commitChannel:
 			if !ok {
-				panic("commit channel closed unexpectedly")
+				// This should never happen and behaviour is currently intentionally undefined / untested
+				notifier.close()
+				return
 			}
 			notifier.removeCompletedListeners()
 			notifier.receiveBlock(blockCommit)

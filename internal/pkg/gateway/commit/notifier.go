@@ -39,7 +39,7 @@ type Notification struct {
 // NewNotifier constructor.
 func NewNotifier(supplier NotificationSupplier) *Notifier {
 	if supplier == nil {
-		panic("nil ledger notifier")
+		return nil
 	}
 
 	return &Notifier{

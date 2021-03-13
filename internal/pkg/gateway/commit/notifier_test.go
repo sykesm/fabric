@@ -29,11 +29,9 @@ func TestNotifier(t *testing.T) {
 		return commit.NewNotifier(notificationSupplier)
 	}
 
-	t.Run("NewNotifier with nil ledger panics", func(t *testing.T) {
-		f := func() {
-			commit.NewNotifier(nil)
-		}
-		require.Panics(t, f)
+	t.Run("NewNotifier with nil ledger returns nil", func(t *testing.T) {
+		result := commit.NewNotifier(nil)
+		require.Nil(t, result)
 	})
 
 	t.Run("Notify", func(t *testing.T) {
@@ -48,22 +46,14 @@ func TestNotifier(t *testing.T) {
 			require.ErrorContains(t, err, "MY_ERROR")
 		})
 
-		t.Run("returns notifier on successful registration", func(t *testing.T) {
-			commitSend := make(chan *ledger.CommitNotification)
-			notifier := newTestNotifier(commitSend)
-			defer notifier.Close()
-
-			commitReceive, err := notifier.Notify(context.Background().Done(), "CHANNEL_NAME", "TX_ID")
-			require.NoError(t, err)
-			require.NotNil(t, commitReceive)
-		})
-
 		t.Run("delivers notification for matching transaction", func(t *testing.T) {
 			commitSend := make(chan *ledger.CommitNotification, 1)
 			notifier := newTestNotifier(commitSend)
 			defer notifier.Close()
 
-			commitReceive, _ := notifier.Notify(context.Background().Done(), "CHANNEL_NAME", "TX_ID")
+			commitReceive, err := notifier.Notify(context.Background().Done(), "CHANNEL_NAME", "TX_ID")
+			require.NoError(t, err)
+
 			commitSend <- &ledger.CommitNotification{
 				BlockNumber: 1,
 				TxIDValidationCodes: map[string]peer.TxValidationCode{
@@ -85,7 +75,9 @@ func TestNotifier(t *testing.T) {
 			notifier := newTestNotifier(commitSend)
 			defer notifier.Close()
 
-			commitReceive, _ := notifier.Notify(context.Background().Done(), "CHANNEL_NAME", "TX_ID")
+			commitReceive, err := notifier.Notify(context.Background().Done(), "CHANNEL_NAME", "TX_ID")
+			require.NoError(t, err)
+
 			commitSend <- &ledger.CommitNotification{
 				BlockNumber: 1,
 				TxIDValidationCodes: map[string]peer.TxValidationCode{
@@ -108,7 +100,9 @@ func TestNotifier(t *testing.T) {
 			notifier := newTestNotifier(commitSend)
 			defer notifier.Close()
 
-			commitReceive, _ := notifier.Notify(context.Background().Done(), "CHANNEL_NAME", "TX_ID")
+			commitReceive, err := notifier.Notify(context.Background().Done(), "CHANNEL_NAME", "TX_ID")
+			require.NoError(t, err)
+
 			commitSend <- &ledger.CommitNotification{
 				BlockNumber: 1,
 				TxIDValidationCodes: map[string]peer.TxValidationCode{
@@ -136,7 +130,9 @@ func TestNotifier(t *testing.T) {
 			notifier := newTestNotifier(commitSend)
 			defer notifier.Close()
 
-			commitReceive, _ := notifier.Notify(context.Background().Done(), "CHANNEL_NAME", "TX_ID")
+			commitReceive, err := notifier.Notify(context.Background().Done(), "CHANNEL_NAME", "TX_ID")
+			require.NoError(t, err)
+
 			commitSend <- &ledger.CommitNotification{
 				BlockNumber: 1,
 				TxIDValidationCodes: map[string]peer.TxValidationCode{
@@ -164,7 +160,9 @@ func TestNotifier(t *testing.T) {
 			notifier := newTestNotifier(commitSend)
 			defer notifier.Close()
 
-			commitReceive, _ := notifier.Notify(context.Background().Done(), "CHANNEL_NAME", "TX_ID")
+			commitReceive, err := notifier.Notify(context.Background().Done(), "CHANNEL_NAME", "TX_ID")
+			require.NoError(t, err)
+
 			commitSend <- &ledger.CommitNotification{
 				BlockNumber: 1,
 				TxIDValidationCodes: map[string]peer.TxValidationCode{
@@ -189,7 +187,9 @@ func TestNotifier(t *testing.T) {
 			defer notifier.Close()
 
 			ctx, cancel := context.WithCancel(context.Background())
-			commitReceive, _ := notifier.Notify(ctx.Done(), "CHANNEL_NAME", "TX_ID")
+			commitReceive, err := notifier.Notify(ctx.Done(), "CHANNEL_NAME", "TX_ID")
+			require.NoError(t, err)
+
 			cancel()
 			commitSend <- &ledger.CommitNotification{
 				BlockNumber: 1,
@@ -207,8 +207,12 @@ func TestNotifier(t *testing.T) {
 			notifier := newTestNotifier(commitSend)
 			defer notifier.Close()
 
-			commitReceive1, _ := notifier.Notify(context.Background().Done(), "CHANNEL_NAME", "TX_ID")
-			commitReceive2, _ := notifier.Notify(context.Background().Done(), "CHANNEL_NAME", "TX_ID")
+			commitReceive1, err := notifier.Notify(context.Background().Done(), "CHANNEL_NAME", "TX_ID")
+			require.NoError(t, err)
+
+			commitReceive2, err := notifier.Notify(context.Background().Done(), "CHANNEL_NAME", "TX_ID")
+			require.NoError(t, err)
+
 			commitSend <- &ledger.CommitNotification{
 				BlockNumber: 1,
 				TxIDValidationCodes: map[string]peer.TxValidationCode{
@@ -233,8 +237,12 @@ func TestNotifier(t *testing.T) {
 			defer notifier.Close()
 
 			ctx, cancel := context.WithCancel(context.Background())
-			commitReceive1, _ := notifier.Notify(ctx.Done(), "CHANNEL_NAME", "TX_ID")
-			commitReceive2, _ := notifier.Notify(context.Background().Done(), "CHANNEL_NAME", "TX_ID")
+			commitReceive1, err := notifier.Notify(ctx.Done(), "CHANNEL_NAME", "TX_ID")
+			require.NoError(t, err)
+
+			commitReceive2, err := notifier.Notify(context.Background().Done(), "CHANNEL_NAME", "TX_ID")
+			require.NoError(t, err)
+
 			cancel()
 			commitSend <- &ledger.CommitNotification{
 				BlockNumber: 1,
@@ -255,7 +263,8 @@ func TestNotifier(t *testing.T) {
 			commitSend := make(chan *ledger.CommitNotification)
 			notifier := newTestNotifier(commitSend)
 
-			commitReceive, _ := notifier.Notify(context.Background().Done(), "CHANNEL_NAME", "TX_ID")
+			commitReceive, err := notifier.Notify(context.Background().Done(), "CHANNEL_NAME", "TX_ID")
+			require.NoError(t, err)
 			notifier.Close()
 
 			_, ok := <-commitReceive
