@@ -7,7 +7,6 @@ SPDX-License-Identifier: Apache-2.0
 package commit_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/hyperledger/fabric-protos-go/peer"
@@ -41,7 +40,7 @@ func TestNotifier(t *testing.T) {
 			notifier := commit.NewNotifier(notificationSupplier)
 			defer notifier.Close()
 
-			_, err := notifier.Notify(context.Background().Done(), "CHANNEL_NAME", "TX_ID")
+			_, err := notifier.Notify(nil, "CHANNEL_NAME", "TX_ID")
 
 			require.ErrorContains(t, err, "MY_ERROR")
 		})
@@ -51,7 +50,7 @@ func TestNotifier(t *testing.T) {
 			notifier := newTestNotifier(commitSend)
 			defer notifier.Close()
 
-			commitReceive, err := notifier.Notify(context.Background().Done(), "CHANNEL_NAME", "TX_ID")
+			commitReceive, err := notifier.Notify(nil, "CHANNEL_NAME", "TX_ID")
 			require.NoError(t, err)
 
 			commitSend <- &ledger.CommitNotification{
@@ -75,7 +74,7 @@ func TestNotifier(t *testing.T) {
 			notifier := newTestNotifier(commitSend)
 			defer notifier.Close()
 
-			commitReceive, err := notifier.Notify(context.Background().Done(), "CHANNEL_NAME", "TX_ID")
+			commitReceive, err := notifier.Notify(nil, "CHANNEL_NAME", "TX_ID")
 			require.NoError(t, err)
 
 			commitSend <- &ledger.CommitNotification{
@@ -100,7 +99,7 @@ func TestNotifier(t *testing.T) {
 			notifier := newTestNotifier(commitSend)
 			defer notifier.Close()
 
-			commitReceive, err := notifier.Notify(context.Background().Done(), "CHANNEL_NAME", "TX_ID")
+			commitReceive, err := notifier.Notify(nil, "CHANNEL_NAME", "TX_ID")
 			require.NoError(t, err)
 
 			commitSend <- &ledger.CommitNotification{
@@ -130,7 +129,7 @@ func TestNotifier(t *testing.T) {
 			notifier := newTestNotifier(commitSend)
 			defer notifier.Close()
 
-			commitReceive, err := notifier.Notify(context.Background().Done(), "CHANNEL_NAME", "TX_ID")
+			commitReceive, err := notifier.Notify(nil, "CHANNEL_NAME", "TX_ID")
 			require.NoError(t, err)
 
 			commitSend <- &ledger.CommitNotification{
@@ -160,7 +159,7 @@ func TestNotifier(t *testing.T) {
 			notifier := newTestNotifier(commitSend)
 			defer notifier.Close()
 
-			commitReceive, err := notifier.Notify(context.Background().Done(), "CHANNEL_NAME", "TX_ID")
+			commitReceive, err := notifier.Notify(nil, "CHANNEL_NAME", "TX_ID")
 			require.NoError(t, err)
 
 			commitSend <- &ledger.CommitNotification{
@@ -186,11 +185,11 @@ func TestNotifier(t *testing.T) {
 			notifier := newTestNotifier(commitSend)
 			defer notifier.Close()
 
-			ctx, cancel := context.WithCancel(context.Background())
-			commitReceive, err := notifier.Notify(ctx.Done(), "CHANNEL_NAME", "TX_ID")
+			done := make(chan struct{})
+			commitReceive, err := notifier.Notify(done, "CHANNEL_NAME", "TX_ID")
 			require.NoError(t, err)
 
-			cancel()
+			close(done)
 			commitSend <- &ledger.CommitNotification{
 				BlockNumber: 1,
 				TxIDValidationCodes: map[string]peer.TxValidationCode{
@@ -207,10 +206,10 @@ func TestNotifier(t *testing.T) {
 			notifier := newTestNotifier(commitSend)
 			defer notifier.Close()
 
-			commitReceive1, err := notifier.Notify(context.Background().Done(), "CHANNEL_NAME", "TX_ID")
+			commitReceive1, err := notifier.Notify(nil, "CHANNEL_NAME", "TX_ID")
 			require.NoError(t, err)
 
-			commitReceive2, err := notifier.Notify(context.Background().Done(), "CHANNEL_NAME", "TX_ID")
+			commitReceive2, err := notifier.Notify(nil, "CHANNEL_NAME", "TX_ID")
 			require.NoError(t, err)
 
 			commitSend <- &ledger.CommitNotification{
@@ -236,14 +235,14 @@ func TestNotifier(t *testing.T) {
 			notifier := newTestNotifier(commitSend)
 			defer notifier.Close()
 
-			ctx, cancel := context.WithCancel(context.Background())
-			commitReceive1, err := notifier.Notify(ctx.Done(), "CHANNEL_NAME", "TX_ID")
+			done := make(chan struct{})
+			commitReceive1, err := notifier.Notify(done, "CHANNEL_NAME", "TX_ID")
 			require.NoError(t, err)
 
-			commitReceive2, err := notifier.Notify(context.Background().Done(), "CHANNEL_NAME", "TX_ID")
+			commitReceive2, err := notifier.Notify(nil, "CHANNEL_NAME", "TX_ID")
 			require.NoError(t, err)
 
-			cancel()
+			close(done)
 			commitSend <- &ledger.CommitNotification{
 				BlockNumber: 1,
 				TxIDValidationCodes: map[string]peer.TxValidationCode{
@@ -256,6 +255,38 @@ func TestNotifier(t *testing.T) {
 			require.False(t, ok1, "Expected notification channel to be closed but receive was successful")
 			require.True(t, ok2, "Expected notification channel to deliver a result but was closed")
 		})
+
+		t.Run("passes open done channel to notification supplier", func(t *testing.T) {
+			notificationSupplier := &mock.NotificationSupplier{}
+			notificationSupplier.CommitNotificationsReturns(nil, nil)
+			notifier := commit.NewNotifier(notificationSupplier)
+			defer notifier.Close()
+
+			_, err := notifier.Notify(nil, "CHANNEL_NAME", "TX_ID")
+			require.NoError(t, err)
+
+			require.Equal(t, 1, notificationSupplier.CommitNotificationsCallCount(), "Unexpected call count")
+			done, _ := notificationSupplier.CommitNotificationsArgsForCall(0)
+			select {
+			case <-done:
+				require.FailNow(t, "Expected done channel to be open but was closed")
+			default:
+			}
+		})
+
+		t.Run("passes channel name to notification supplier", func(t *testing.T) {
+			notificationSupplier := &mock.NotificationSupplier{}
+			notificationSupplier.CommitNotificationsReturns(nil, nil)
+			notifier := commit.NewNotifier(notificationSupplier)
+			defer notifier.Close()
+
+			_, err := notifier.Notify(nil, "CHANNEL_NAME", "TX_ID")
+			require.NoError(t, err)
+
+			require.Equal(t, 1, notificationSupplier.CommitNotificationsCallCount(), "Unexpected call count")
+			_, actual := notificationSupplier.CommitNotificationsArgsForCall(0)
+			require.Equal(t, "CHANNEL_NAME", actual)
+		})
 	})
 
 	t.Run("Close", func(t *testing.T) {
@@ -263,7 +294,7 @@ func TestNotifier(t *testing.T) {
 			commitSend := make(chan *ledger.CommitNotification)
 			notifier := newTestNotifier(commitSend)
 
-			commitReceive, err := notifier.Notify(context.Background().Done(), "CHANNEL_NAME", "TX_ID")
+			commitReceive, err := notifier.Notify(nil, "CHANNEL_NAME", "TX_ID")
 			require.NoError(t, err)
 			notifier.Close()
 

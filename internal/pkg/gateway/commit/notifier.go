@@ -7,7 +7,6 @@ SPDX-License-Identifier: Apache-2.0
 package commit
 
 import (
-	"context"
 	"sync"
 
 	"github.com/hyperledger/fabric-protos-go/peer"
@@ -78,7 +77,7 @@ func (notifier *Notifier) channelNotifier(channelName string) (*channelLevelNoti
 		return result, nil
 	}
 
-	commitChannel, err := notifier.supplier.CommitNotifications(context.Background().Done(), channelName)
+	commitChannel, err := notifier.supplier.CommitNotifications(nil, channelName)
 	if err != nil {
 		return nil, err
 	}
